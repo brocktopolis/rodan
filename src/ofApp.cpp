@@ -159,7 +159,6 @@ void ofApp::draw() {
 	if(bDrawPointCloud && currentDisplay == CUSTOM) {
 		easyCam.begin();
         drawTriangles();
-        //contourFinder.draw(0, 0, kinect.width, kinect.height);
 		//drawPointCloud();
         
 		easyCam.end();
@@ -258,7 +257,7 @@ void ofApp::drawTriangles(){
                     //mesh.addColor(kinect.getDepthPixels()[idx]);
                 mesh.addVertex(worldCoord);
                     }
-            }
+                }
         }
     }
     //glPointSize(3);
