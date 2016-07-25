@@ -51,7 +51,7 @@ void ofApp::setup() {
 	kinect.setCameraTiltAngle(angle);
 	
 	// start from the front
-	bDrawPointCloud = false;
+	bDrawPointCloud = true;
     
     //SYPHON STUFF
     bSmooth = false;
@@ -125,6 +125,7 @@ void ofApp::draw() {
 	
 	if(bDrawPointCloud) {
 		easyCam.begin();
+        drawTriangles();
 		//drawPointCloud();
         
 		easyCam.end();
@@ -183,14 +184,39 @@ void ofApp::draw() {
 }
 
 void ofApp::drawTriangles(){
+    int w = 640;
+    int h = 480;
+    ofMesh mesh;
+    mesh.setMode(OF_PRIMITIVE_TRIANGLE_STRIP);
+    int step = 5;
     
+        for(int x = 0; x < w; x += step) {
+            for(int y = 0; y < h; y += step) {
+            float dist = kinect.getDistanceAt(x, y);
+            if(dist > 0 && dist < 1500) {
+                mesh.addColor(kinect.getColorAt(x,y));
+                mesh.addVertex(kinect.getWorldCoordinateAt(x, y));
+            }
+        }
+    }
+    //glPointSize(3);
+    ofPushMatrix();
+    // the projected points are 'upside down' and 'backwards'
+    ofScale(1, -1, -1);
+    ofTranslate(0, 0, -1000); // center the points a bit
+    ofEnableDepthTest();
+    //mesh.drawVertices();
+    mesh.draw();
+    ofDisableDepthTest();
+    ofPopMatrix();
+
 }
 
 void ofApp::drawPointCloud() {
 	int w = 640;
 	int h = 480;
 	ofMesh mesh;
-	mesh.setMode(OF_PRIMITIVE_POINTS);
+	
 	int step = 2;
 	for(int y = 0; y < h; y += step) {
 		for(int x = 0; x < w; x += step) {
@@ -200,8 +226,7 @@ void ofApp::drawPointCloud() {
 			}
 		}
 	}
-	glPointSize(3);
-	ofPushMatrix();
+    ofPushMatrix();
 	// the projected points are 'upside down' and 'backwards' 
 	ofScale(1, -1, -1);
 	ofTranslate(0, 0, -1000); // center the points a bit

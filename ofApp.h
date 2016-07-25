@@ -4,6 +4,8 @@
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
 #include "ofxSyphon.h"
+#include "ofxMidi.h"
+#include "ofxGui.h"
 
 
 // Windows users:
