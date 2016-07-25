@@ -4,6 +4,8 @@
 #include "ofxOpenCv.h"
 #include "ofxKinect.h"
 #include "ofxSyphon.h"
+#include "ofxMidi.h"
+#include "ofxGui.h"
 
 
 // Windows users:
@@ -24,7 +26,7 @@
 // uncomment this to read from two kinects simultaneously
 //#define USE_TWO_KINECTS
 
-class ofApp : public ofBaseApp {
+class ofApp : public ofBaseApp, public ofxMidiListener {
 public:
 	
 	void setup();
@@ -34,6 +36,10 @@ public:
 	
     void drawTriangles();
 	void drawPointCloud();
+    void showMidiData();
+    
+    void newMidiMessage(ofxMidiMessage& eventArgs);
+    void processMidi();
 	
 	void keyPressed(int key);
 	void mouseDragged(int x, int y, int button);
@@ -68,6 +74,7 @@ public:
 	ofxCvGrayscaleImage grayImage; // grayscale depth image
 	ofxCvGrayscaleImage grayThreshNear; // the near thresholded image
 	ofxCvGrayscaleImage grayThreshFar; // the far thresholded image
+    ofxCvGrayscaleImage background;
 	
 	ofxCvContourFinder contourFinder;
 	
@@ -81,4 +88,21 @@ public:
 	
 	// used for viewing the point cloud
 	ofEasyCam easyCam;
+    
+    stringstream text;
+    float kinectDepthMin;
+    float kinectDepthMax;
+    float lastRot;
+    float connectionDistMax;
+    float randDist;
+
+    int step;
+    float zScale;
+    
+    enum Display {CUSTOM, DEPTH, GREY, NORMAL};
+    
+    Display currentDisplay;
+    
+    ofxMidiIn midiIn;
+    ofxMidiMessage midiMessage;
 };
