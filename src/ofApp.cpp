@@ -73,11 +73,15 @@ void ofApp::setup() {
     //MIDI
     // print input ports to console
     midiIn.listPorts(); // via instance
-    //ofxMidiIn::listPorts(); // via static as well
+    ofxMidiIn::listPorts(); // via static as well
     
     // open port by number (you may need to change this)
     //midiIn.openPort(1);
-    midiIn.openPort("Axiom A.I.R. Mini32 MIDI");	// by name
+
+    if (MIDICONTROLLER == 0)
+	    midiIn.openPort("Axiom A.I.R. Mini32 MIDI");	// by name
+    else if (MIDICONTROLLER == 1)
+	    midiIn.openPort("Akai APC40");
     //midiIn.openVirtualPort("ofxMidiIn Input"); // open a virtual port
     
     // don't ignore sysex, timing, & active sense messages,
@@ -88,12 +92,33 @@ void ofApp::setup() {
     midiIn.addListener(this);
     
     // print received messages to the console
-    //midiIn.setVerbose(true);
+    midiIn.setVerbose(true);
     
     //END MIDI
     
     //STEP variable initialization
     step = 5;
+    kinectDepthMin = 0;
+    kinectDepthMax = 5000;
+    meshRotation = 0;
+    connectionDistMax = 5000;
+    randDist = 10;
+    currentDisplay = CUSTOM;
+
+    cam.setupPerspective();
+    cam.setFarClip(10000);
+    cam.setPosition(0, 0, 3000);
+
+    room.set(10000);
+
+    /*roomMat.setDiffuseColor(200);
+    roomMat.setAmbientColor(100);
+    roomMat.setSpecularColor(255);
+
+    spotLight.setup();
+    spotLight.setSpotlight();
+    spotLight.setDiffuseColor(ofColor(255, 255, 255));
+    spotLight.setAttenuation(0, 0, 0);*/
     
 }
 
@@ -157,11 +182,11 @@ void ofApp::draw() {
 	ofSetColor(255, 255, 255);
 	
 	if(bDrawPointCloud && currentDisplay == CUSTOM) {
-		easyCam.begin();
-        drawTriangles();
+		//easyCam.begin();
+		drawTriangles();
 		//drawPointCloud();
         
-		easyCam.end();
+		//easyCam.end();
     }else if (currentDisplay == DEPTH){
         kinect.drawDepth(0, 0, ofGetWidth(), ofGetHeight());
     }else if (currentDisplay == GREY){
@@ -236,6 +261,8 @@ void ofApp::drawTriangles(){
 //    int step = 5;
     
     
+    ofVec3f center;
+    float numPoints;
         //for(int x = blob.boundingRect.getLeft(); x < w; x += step) {
             //for(int y = blob.boundingRect.getTop(); y < h; y += step) {
                 for(int y = 5; y < h - 5; y += step) {
@@ -252,24 +279,48 @@ void ofApp::drawTriangles(){
                         }
                     }
                     if (add){
-                mesh.addColor(kinect.getColorAt(x,y));
+			mesh.addColor(kinect.getColorAt(x,y));
                     //int idx = y * kinect.width + x;
                     //mesh.addColor(kinect.getDepthPixels()[idx]);
-                mesh.addVertex(worldCoord);
+			mesh.addVertex(worldCoord);
+			center += worldCoord;
+			numPoints++;
                     }
                 }
         }
     }
-    //glPointSize(3);
-    ofPushMatrix();
-    // the projected points are 'upside down' and 'backwards'
-    ofScale(1, -1, zScale);
-    ofTranslate(0, 0, -1000); // center the points a bit
-    ofEnableDepthTest();
-    //mesh.drawVertices();
-    mesh.draw();
-    ofDisableDepthTest();
-    ofPopMatrix();
+
+    center.x /= numPoints;
+    center.y /= numPoints;
+    center.z /= numPoints;
+
+    float rotRads = meshRotation * 3.14159/180;
+    cam.setPosition(ofPoint(sin(rotRads) * zPosition, 0, cos(rotRads) * zPosition) + center);
+    cam.lookAt(center);
+
+    ofEnableLighting();
+    cam.begin();
+
+    	    /*spotLight.setPosition(center);
+    	    spotLight.enable();
+	    roomMat.begin();*/
+	    room.drawWireframe();
+	    /*roomMat.end();
+    	    spotLight.disable();*/
+	    //glPointSize(3);
+	    ofPushMatrix();
+		    // the projected points are 'upside down' and 'backwards'
+		    ofScale(1, 1, zScale);
+		    //cam.setPosition(ofPoint(sin(rotRads) * zPosition, 0, cos(rotRads) * zPosition));
+		    //ofTranslate(0, 0, zPosition); // center the points a bit
+		    ofEnableDepthTest();
+		    //mesh.drawVertices();
+		    mesh.draw();
+		    ofDisableDepthTest();
+	    ofPopMatrix();
+
+    cam.end();
+    ofDisableLighting();
     //}
 
 }
@@ -288,10 +339,10 @@ void ofApp::drawPointCloud() {
 			}
 		}
 	}
-    ofPushMatrix();
+    	ofPushMatrix();
 	// the projected points are 'upside down' and 'backwards' 
 	ofScale(1, -1, -1);
-	ofTranslate(0, 0, -1000); // center the points a bit
+	ofTranslate(0, 0, zPosition); // center the points a bit
 	ofEnableDepthTest();
 	mesh.drawVertices();
 	ofDisableDepthTest();
@@ -299,7 +350,7 @@ void ofApp::drawPointCloud() {
 }
 
 void ofApp::showMidiData(){
-    ofSetColor(0);
+    ofSetColor(255);
     
     // draw the last recieved message contents to the screen
     text << "Received: " << ofxMidiMessage::getStatusString(midiMessage.status);
@@ -348,24 +399,33 @@ void ofApp::newMidiMessage(ofxMidiMessage& msg) {
 }
 
 void ofApp::processMidi(){
-    if (midiMessage.control == 1){
+
+    int baseKnob = MIDICONTROLLER == 0 ? 1 : 48;
+
+    if (midiMessage.control == baseKnob){
         kinectDepthMin = ofMap(midiMessage.value, 0, 127, 0, 1000, true);
-    }else if (midiMessage.control == 2){
+	cout << ofToString(kinectDepthMin) << endl;
+    }else if (midiMessage.control == baseKnob + 1){
         kinectDepthMax = ofMap(midiMessage.value, 0, 127, kinectDepthMin, 5000, true);
-    }else if (midiMessage.control == 3){
-        float rotation = ofMap(midiMessage.value - lastRot, -1, 1, -30, 30, false);
-        easyCam.manualRotate(ofVec3f(0, rotation, 0));
+    }else if (midiMessage.control == baseKnob + 2){
+	meshRotation = ofMap(midiMessage.value, 0, 127, 0, 360, false);
+        //meshRotation = ofMap(midiMessage.value - lastRot, -1, 1, -90, 90, false);
+        //easyCam.manualRotate(ofVec3f(0, rotation, 0));
+	
         //cout << ofToString(midiMessage.value - lastRot) << endl;
         lastRot = midiMessage.value;
-    }else if (midiMessage.control == 4){
+    }else if (midiMessage.control == baseKnob + 3){
         connectionDistMax = ofMap(midiMessage.value, 0, 127, 0, 5000, false);
-    }else if (midiMessage.control == 5){
+    }else if (midiMessage.control == baseKnob + 4){
         randDist = ofMap(midiMessage.value, 0, 127, 0, 100, false);
-    }else if (midiMessage.control == 6){
+    }else if (midiMessage.control == baseKnob + 5){
         step = ofMap(midiMessage.value, 0, 127, 1, 100, false);
-    }else if (midiMessage.control == 7){
+    }else if (midiMessage.control == baseKnob + 6){
         zScale = ofMap(midiMessage.value, 0, 127, -1, 1, false);
+    }else if (midiMessage.control == baseKnob + 7){
+        zPosition = ofMap(midiMessage.value, 0, 127, -5000, 5000, false);
     }
+
     
     if (midiMessage.pitch == 40){
         currentDisplay = CUSTOM;
@@ -478,7 +538,20 @@ void ofApp::keyPressed (int key) {
 			if(angle<-30) angle=-30;
 			kinect.setCameraTiltAngle(angle);
 			break;
+		case 'r':
+			reset();
 	}
+}
+
+void ofApp::reset(){
+    step = 5;
+    kinectDepthMin = 0;
+    kinectDepthMax = 5000;
+    meshRotation = 0;
+    connectionDistMax = 5000;
+    randDist = 10;
+    currentDisplay = CUSTOM;
+
 }
 
 //--------------------------------------------------------------

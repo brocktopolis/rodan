@@ -26,6 +26,9 @@
 // uncomment this to read from two kinects simultaneously
 //#define USE_TWO_KINECTS
 
+//0 = axiom air, 1 = apc
+#define MIDICONTROLLER 1
+
 class ofApp : public ofBaseApp, public ofxMidiListener {
 public:
 	
@@ -40,6 +43,7 @@ public:
     
     void newMidiMessage(ofxMidiMessage& eventArgs);
     void processMidi();
+    void reset();
 	
 	void keyPressed(int key);
 	void mouseDragged(int x, int y, int button);
@@ -87,17 +91,24 @@ public:
 	int angle;
 	
 	// used for viewing the point cloud
-	ofEasyCam easyCam;
+	//ofEasyCam easyCam;
+    ofCamera cam;
+    ofEasyCam easyCam;
     
     stringstream text;
     float kinectDepthMin;
     float kinectDepthMax;
     float lastRot;
+    float meshRotation;
     float connectionDistMax;
     float randDist;
 
     int step;
     float zScale;
+    float zPosition;
+    ofBoxPrimitive room;
+    ofMaterial roomMat;
+    ofLight spotLight;
     
     enum Display {CUSTOM, DEPTH, GREY, NORMAL};
     
