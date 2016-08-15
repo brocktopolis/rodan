@@ -111,14 +111,14 @@ void ofApp::setup() {
 
     room.set(10000);
 
-    roomMat.setDiffuseColor(200);
+    roomMat.setDiffuseColor(255);
     roomMat.setAmbientColor(0);
 
     ofSetSmoothLighting(true);
     spotLight.setup();
     spotLight.setPointLight();
     spotLight.setDiffuseColor(ofColor(255, 255, 255));
-    spotLight.setAttenuation(1, .2, 0);
+    spotLight.setAttenuation(1, .4, 0);
     //spotLight.setAttenuation(0, 0, 0);
     
 }
@@ -306,13 +306,13 @@ void ofApp::drawTriangles(){
 
     	    spotLight.draw();
     	    //spotLight.setPosition(ofPoint(center.x, center.y, center.z + 1000));
-    	    spotLight.setPosition(ofPoint(0, -2000, -2000));
+    	    spotLight.setPosition(ofPoint(0, -500, -500));
 	    //spotLight.lookAt(ofPoint(center.x, center.y, center.z));
 
-	    roomMat.begin();
     	    spotLight.enable();
+	    roomMat.begin();
 
-	    float size = 5000;
+	    float size = 1000;
     	    //ofDrawBox(center.x + 1000, center.y, center.z, 1000, 1000, 1000);
     	    ofDrawBox(center.x + size/2, center.y, center.z, 2, size, size);
     	    ofDrawBox(center.x - size/2, center.y, center.z, 2, size, size);
@@ -322,7 +322,6 @@ void ofApp::drawTriangles(){
     	    ofDrawBox(center.x, center.y, center.z - size/2, size, size, 2);
 	    //room.draw();
 
-    	    spotLight.disable();
 	    roomMat.end();
 
 	    //room.drawWireframe();
@@ -336,6 +335,8 @@ void ofApp::drawTriangles(){
 		    //mesh.drawVertices();
 		    mesh.draw();
 	    ofPopMatrix();
+
+    	    spotLight.disable();
 
     cam.end();
     ofDisableLighting();
@@ -442,7 +443,7 @@ void ofApp::processMidi(){
     }else if (midiMessage.control == baseKnob + 6){
         zScale = ofMap(midiMessage.value, 0, 127, -1, 1, false);
     }else if (midiMessage.control == baseKnob + 7){
-        zPosition = ofMap(midiMessage.value, 0, 127, 0, 10000, false);
+        zPosition = ofMap(midiMessage.value, 0, 127, 0, 1000, false);
     }
 
     
