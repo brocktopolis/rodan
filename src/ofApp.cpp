@@ -106,19 +106,20 @@ void ofApp::setup() {
     currentDisplay = CUSTOM;
 
     cam.setupPerspective();
-    cam.setFarClip(10000);
+    cam.setFarClip(20000);
     cam.setPosition(0, 0, 3000);
 
     room.set(10000);
 
-    /*roomMat.setDiffuseColor(200);
-    roomMat.setAmbientColor(100);
-    roomMat.setSpecularColor(255);
+    roomMat.setDiffuseColor(200);
+    roomMat.setAmbientColor(0);
 
+    ofSetSmoothLighting(true);
     spotLight.setup();
-    spotLight.setSpotlight();
+    spotLight.setPointLight();
     spotLight.setDiffuseColor(ofColor(255, 255, 255));
-    spotLight.setAttenuation(0, 0, 0);*/
+    spotLight.setAttenuation(1, .2, 0);
+    //spotLight.setAttenuation(0, 0, 0);
     
 }
 
@@ -274,7 +275,7 @@ void ofApp::drawTriangles(){
                 if (dist > kinectDepthMin && dist < kinectDepthMax && worldCoord.z > kinectDepthMin && worldCoord.z < kinectDepthMax) {
                     bool add = true;
                     if (mesh.getNumVertices() != 0){
-                        if (ofDist(worldCoord, mesh.getVertex(mesh.getNumVertices() - 1)) > connectionDistMax){
+                        if (ofDist(worldCoord, mesh.getVertex(mesh.getNumVertices() - 1)) > connectionDistMax || kinect.getColorAt(x, y) == ofColor(0, 0, 0)){
                             add = false;
                         }
                     }
@@ -298,29 +299,47 @@ void ofApp::drawTriangles(){
     cam.setPosition(ofPoint(sin(rotRads) * zPosition, 0, cos(rotRads) * zPosition) + center);
     cam.lookAt(center);
 
+    ofSetColor(255);
+    ofEnableDepthTest();
     ofEnableLighting();
     cam.begin();
 
-    	    /*spotLight.setPosition(center);
+    	    spotLight.draw();
+    	    //spotLight.setPosition(ofPoint(center.x, center.y, center.z + 1000));
+    	    spotLight.setPosition(ofPoint(0, -2000, -2000));
+	    //spotLight.lookAt(ofPoint(center.x, center.y, center.z));
+
+	    roomMat.begin();
     	    spotLight.enable();
-	    roomMat.begin();*/
-	    room.drawWireframe();
-	    /*roomMat.end();
-    	    spotLight.disable();*/
+
+	    float size = 5000;
+    	    //ofDrawBox(center.x + 1000, center.y, center.z, 1000, 1000, 1000);
+    	    ofDrawBox(center.x + size/2, center.y, center.z, 2, size, size);
+    	    ofDrawBox(center.x - size/2, center.y, center.z, 2, size, size);
+    	    ofDrawBox(center.x, center.y + size/2, center.z, size, 2, size);
+    	    ofDrawBox(center.x, center.y - size/2, center.z, size, 2, size);
+    	    ofDrawBox(center.x, center.y, center.z + size/2, size, size, 2);
+    	    ofDrawBox(center.x, center.y, center.z - size/2, size, size, 2);
+	    //room.draw();
+
+    	    spotLight.disable();
+	    roomMat.end();
+
+	    //room.drawWireframe();
+
 	    //glPointSize(3);
 	    ofPushMatrix();
 		    // the projected points are 'upside down' and 'backwards'
 		    ofScale(1, 1, zScale);
 		    //cam.setPosition(ofPoint(sin(rotRads) * zPosition, 0, cos(rotRads) * zPosition));
 		    //ofTranslate(0, 0, zPosition); // center the points a bit
-		    ofEnableDepthTest();
 		    //mesh.drawVertices();
 		    mesh.draw();
-		    ofDisableDepthTest();
 	    ofPopMatrix();
 
     cam.end();
     ofDisableLighting();
+    ofDisableDepthTest();
     //}
 
 }
@@ -423,7 +442,7 @@ void ofApp::processMidi(){
     }else if (midiMessage.control == baseKnob + 6){
         zScale = ofMap(midiMessage.value, 0, 127, -1, 1, false);
     }else if (midiMessage.control == baseKnob + 7){
-        zPosition = ofMap(midiMessage.value, 0, 127, -5000, 5000, false);
+        zPosition = ofMap(midiMessage.value, 0, 127, 0, 10000, false);
     }
 
     
